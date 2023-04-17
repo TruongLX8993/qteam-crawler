@@ -4,64 +4,6 @@ const {convert} = require("html-to-text");
 const jsdom = require("jsdom");
 const util = require("./util");
 
-class CategoryConverter {
-    convert(rawCategories) {
-        let res = [];
-        let parentNodePath = [];
-        let currentDeep = 1000;
-        for (let i = 0; i < rawCategories.length; i++) {
-            let convertedCategory = {};
-            let category = rawCategories[i];
-            convertedCategory.id = category.id;
-            convertedCategory.name = this.#convertName(category.name);
-            convertedCategory.linkSeo = this.getLinkSeo(convertedCategory);
-            let deep = this.#getDeepLevelFromName(category.name);
-            console.log("deep:" + deep + "|" + currentDeep + "" + parentNodePath);
-
-            if (deep > currentDeep) {
-                let previousCategory = res[res.length - 1];
-                parentNodePath.push(previousCategory);
-                currentDeep = deep;
-            } else if (deep < currentDeep) {
-                parentNodePath.pop();
-                currentDeep = deep;
-            }
-
-            res.push(convertedCategory);
-            let parentDeep = currentDeep - 1;
-            convertedCategory.level = currentDeep;
-            convertedCategory.parent = parentDeep >= 0 ? parentNodePath[parentDeep] : null;
-            convertedCategory.parentId = convertedCategory.parent == null ? 0 : convertedCategory.parent.id;
-            convertedCategory.order = i;
-            convertedCategory.path = this.#generatePath(convertedCategory);
-        }
-        return res;
-    }
-
-
-    getLinkSeo(convertedCategory) {
-        return util.removeAccents(convertedCategory.name).replaceAll(' ', '-').trim();
-    }
-
-    #generatePath(cateogory) {
-        var res = '';
-        var tem = cateogory;
-        while (tem != null) {
-            res = `<li><a href='/category/${tem.linkSeo}.html'>${tem.name}<i className='fa fa-angle-double-right'></i></a></li>` + res;
-            tem = tem.parent;
-        }
-        res = `<li><a href='/'>Trang chủ&nbsp; <i className='fa fa-angle-double-right'></i></a></li>` + res;
-        return res;
-    }
-
-    #getDeepLevelFromName(name) {
-        return (name.match(/--/g) || []).length
-    }
-
-    #convertName(name) {
-        return name.replaceAll('-', '').trim();
-    }
-}
 
 class SessionData {
     sid;
@@ -167,9 +109,9 @@ class Crawler {
 
     async getDetailProduct(productSummaryInfo) {
         const url = `http://admin.bncvn.vn/product-product-edit-${productSummaryInfo.id}-lang-vi`;
-        console.log(`getDetailProduct:${productSummaryInfo.id}`);
         let response = await this.#get(url);
         const $ = this.#loadJQuery(response.data);
+        // fs.writeFileSync(`./${productSummaryInfo.id}.html`,response.data);
         const imgNodes = $('.list-image div.imgs > img');
         let images = [];
         for (let i = 0; i < imgNodes.length; i++) {
@@ -194,8 +136,17 @@ class Crawler {
         res.price = $('#gia').val();
         res.categoryName = categoryName;
         res.categoryPath = categoryPath;
+        res.categoryId = this.#getCategoryId(response.data);
+        console.log(`getDetailProduct:${productSummaryInfo.id}|${res.categoryId}`);
         return res;
 
+    }
+
+    #getCategoryId(data) {
+        const regex = /<label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input class="checkboxes select_category" data-id=".*" type="checkbox" name="category\[\]" value="(\d*)" checked>.*/
+        const result = data.match(regex);
+        if (result == null || result.length <= 1) return 0;
+        return result[1];
     }
 
     #loadSessionFromFile() {

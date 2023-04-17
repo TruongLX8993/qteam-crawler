@@ -18,9 +18,13 @@
 const util = require('./util');
 const baseUrl = 'http://qteam.com.vn';
 
+module.exports = {
+    convert: convert
+}
+
 function convert(rawProducts) {
-    var res = [];
-    for (let i = 0; i <= rawProducts.length; i++) {
+    const convertedProducts = [];
+    for (let i = 0; i < rawProducts.length; i++) {
         let rawProduct = rawProducts[i];
         let primaryImg = util.getImageFileNameFromUrl(rawProduct.img);
         const convertedProduct = {
@@ -31,19 +35,22 @@ function convert(rawProducts) {
             linkSeo: rawProduct.seo,
             description: rawProduct.longDescription,
             images: `/Upload/${primaryImg}`,
-            imageMores: convertSubImgs(rawProduct.images)
+            imageMores: convertSubImgs(rawProduct.subImg),
+            categoryId: rawProduct.categoryId,
 
         };
-        res.push(convertedProduct)
+        convertedProducts.push(convertedProduct)
     }
+    return convertedProducts;
 }
 
 
 function parsePrice(rawPrice) {
-
+    return parseInt(rawPrice) || 0;
 }
 
 function convertSubImgs(subImgs) {
+    if (subImgs == null || subImgs.length == 0) return null;
     let res = `<Images>`
     for (let i = 0; i < subImgs.length; i++) {
         let name = util.getImageFileNameFromUrl(subImgs[i]);

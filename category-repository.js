@@ -4,7 +4,7 @@ module.exports = {
     add
 }
 
-function add(categories) {
+async function add(categories) {
 
     var cmd = 'SET IDENTITY_INSERT qteam_motor.dbo.Category on;';
     for (var i = 0; i < categories.length; i++) {
@@ -23,6 +23,6 @@ function add(categories) {
         console.log(tem);
         cmd += tem;
     }
-    dal.source.query(cmd);
+    await dal.source.query(cmd);
 
 }

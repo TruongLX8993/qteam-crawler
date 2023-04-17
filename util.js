@@ -13,5 +13,5 @@ function removeAccents(str) {
 }
 
 function getImageFileNameFromUrl(url) {
-
+    return url.substring(url.lastIndexOf('/') + 1);
 }
